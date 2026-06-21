@@ -10,6 +10,14 @@ export type VoiceFollowStatus =
   | "low-confidence"
   | "error";
 
+/**
+ * Exact copy used both in the toast that fires when no Web Speech events
+ * arrive within 5s of enabling Voice Follow AND quoted verbatim in the
+ * landing page + README so testers see the same wording everywhere.
+ */
+export const VOICE_FOLLOW_UNAVAILABLE_MESSAGE =
+  "Voice Follow is not available in this desktop runtime. Manual scrolling still works. Local Whisper support is planned.";
+
 export interface UseVoiceFollowOpts {
   enabled: boolean;
   scriptBody: string | null;
@@ -140,10 +148,27 @@ export function useVoiceFollow({
     setCursor(0);
 
     let cancelled = false;
+    let receivedAnyEvent = false;
+
+    // Runtime watchdog: if no speech events arrive within 5s, the host
+    // WebView almost certainly does not deliver Web Speech results
+    // (common in Tauri/WebView2). Fall back to manual scrolling and tell
+    // the user clearly. This is the "experimental" guardrail.
+    const noEventTimer = window.setTimeout(() => {
+      if (cancelled || receivedAnyEvent) return;
+      setStatus("error");
+      voiceFollowDebug.status("error");
+      onUnavailable?.(VOICE_FOLLOW_UNAVAILABLE_MESSAGE);
+      onForceDisable?.();
+    }, 5000);
 
     const handlers = {
       onResult: (r: { text: string; isFinal: boolean; resultIndex?: number; rawTranscript?: string }) => {
         if (cancelled) return;
+        if (!receivedAnyEvent) {
+          receivedAnyEvent = true;
+          window.clearTimeout(noEventTimer);
+        }
         const toks = tokenizeSpoken(r.text);
         const suppressed = providerRef.current?.getDuplicateSuppressedCount?.() ?? 0;
         if (!toks.length) {
@@ -276,6 +301,7 @@ export function useVoiceFollow({
 
     return () => {
       cancelled = true;
+      window.clearTimeout(noEventTimer);
       provider.stop();
       if (providerRef.current === provider) providerRef.current = null;
       if (followRafRef.current) cancelAnimationFrame(followRafRef.current);

@@ -333,7 +333,7 @@
         <div class="feature"><div class="icon">📌</div><h3>Always-on-top floating window</h3><p>Stays above Chrome, Teams, Zoom, Meet, and most apps. Movable, resizable, transparent-capable.</p></div>
         <div class="feature"><div class="icon">🛡</div><h3>Screen Share Safety guidance</h3><p>In-app banners explaining the safe pattern: share a window, not your full desktop.</p></div>
         <div class="feature"><div class="icon">🫥</div><h3>Experimental capture exclusion</h3><p>Windows-only opt-in using <code>SetWindowDisplayAffinity</code> to hide the prompter from many screen-share paths. Best-effort, not guaranteed.</p></div>
-        <div class="feature"><div class="icon">🎙</div><h3>Voice Follow</h3><p>Speech-driven auto-advance with forward-only, smoothed cursor. Pauses when you pause; never jumps.</p></div>
+        <div class="feature"><div class="icon">🎙</div><h3>Voice Follow <span style="font-size:11px;letter-spacing:0.4px;color:var(--warn);background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);padding:1px 6px;border-radius:999px;vertical-align:middle;margin-left:6px;text-transform:uppercase;font-weight:600;">Experimental</span></h3><p>Speech-driven auto-advance with forward-only, smoothed cursor. Pauses when you pause; never jumps. Availability depends on Web Speech support in the desktop runtime; the app auto-detects and falls back to manual scrolling if speech events do not arrive.</p></div>
         <div class="feature"><div class="icon">✨</div><h3>BYOK AI rewrite</h3><p>11 actions across tone, length, and structure. Your API key, your provider, your data path.</p></div>
         <div class="feature"><div class="icon">🔒</div><h3>Local-first privacy</h3><p>Scripts, settings, sessions live only on your device. No account. No telemetry. No analytics SDKs.</p></div>
         <div class="feature"><div class="icon">📈</div><h3>Practice analytics</h3><p>Words per minute, filler word counts, long pauses, confidence score, post-session summary.</p></div>
@@ -498,6 +498,7 @@
         <li><strong>Unsigned binary.</strong> Windows SmartScreen will warn on first launch. Click "More info → Run anyway".</li>
         <li><strong>Capture exclusion is experimental.</strong> Honored by Teams / Zoom / Meet / modern OBS. Not honored by legacy GDI capture or hardware capture cards. Not a security guarantee.</li>
         <li><strong>Full-desktop sharing may still reveal the teleprompter.</strong> Always prefer sharing a specific application window.</li>
+        <li><strong>Voice Follow is experimental.</strong> Availability depends on Web Speech support in the desktop runtime. The current Windows build uses WebView2, where Web Speech is not reliably delivered. If no speech events arrive within 5 seconds of enabling, the app shows a clear notice and auto-falls-back to manual scrolling. <strong>Manual Camera Lock is the recommended test path for v0.2.</strong> A local Whisper provider for reliable offline Voice Follow is on the roadmap.</li>
         <li><strong>Web Speech API accuracy varies</strong> by accent, mic quality, and ambient noise. A local Whisper provider is on the roadmap.</li>
         <li><strong>No auto-update.</strong> We'll send you the next build directly.</li>
       </ul>

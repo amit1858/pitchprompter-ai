@@ -39,8 +39,8 @@ account, telemetry, or cloud storage.
 | Placement presets (Top Center / Top Left / Top Right) | ✅ v0.1 |
 | Focus Mode (controls auto-hide after 3 s while playing) | ✅ v0.1 |
 | Presentation Ready preset (one-click configure + go) | ✅ v0.1 |
-| Voice Follow Mode (speech-driven auto-advance) — main teleprompter | ✅ v0.1 |
-| Voice Follow inside Camera Lock | ⏳ v0.2 |
+| Voice Follow Mode (speech-driven auto-advance) — main teleprompter | ⚠ Experimental (v0.1) |
+| Voice Follow inside Camera Lock | ⚠ Experimental (v0.2) |
 | Practice Mode — WPM, fillers, long pauses, confidence score | ✅ v0.1 |
 | Screen Share Safety guidance (in-app banner + Settings copy) | ✅ v0.1 |
 | Experimental capture exclusion (`SetWindowDisplayAffinity` on Windows) | ✅ v0.1 |
@@ -209,6 +209,16 @@ Headlines:
 - Capture exclusion is **best-effort**, not a security guarantee. Some
   capture paths (legacy GDI, hardware capture) bypass it.
 - Voice Follow is in the main teleprompter only, not Camera Lock — v0.2.
+- **Voice Follow is experimental.** It depends on the Web Speech API being
+  delivered by the host runtime. The Windows build uses WebView2, where
+  Web Speech is not reliably delivered today, so Voice Follow may fail
+  to receive transcripts. The app detects this with a 5-second watchdog,
+  shows the message *"Voice Follow is not available in this desktop
+  runtime. Manual scrolling still works. Local Whisper support is
+  planned."*, and auto-falls-back to manual scrolling. **Manual Camera
+  Lock is the recommended test path for v0.2.** A local Whisper
+  provider (`whisper.cpp` via Tauri sidecar) is on the roadmap and
+  will remove this dependency.
 - No installer, no auto-update in v0.1.
 
 ---

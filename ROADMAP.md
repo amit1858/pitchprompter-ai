@@ -21,7 +21,17 @@ A small, focused roadmap. Three rings, in order.
 - **Code signing.** EV cert procurement; signed EXE + installers; CI
   signing pipeline.
 - **Voice Follow in Camera Lock window.** Single mic capture; alignment
-  state shared between windows via Tauri events.
+  state shared between windows via Tauri events. *Status: shipped, but
+  the underlying Web Speech delivery in WebView2 is unreliable — see
+  next item.*
+- **🚩 Local Whisper provider for reliable offline Voice Follow.**
+  Promoted from v1 to a v0.2.x priority. The current Windows build uses
+  WebView2, which exposes the Web Speech API but does not reliably
+  deliver speech results, so Voice Follow is gated behind a 5-second
+  runtime watchdog that auto-falls-back to manual scrolling with a
+  clear notice. A bundled `whisper.cpp` sidecar driven through the
+  existing `SpeechProvider` interface removes the WebView dependency
+  and is the path to reliable Voice Follow on Windows.
 - **Capture-exclusion validation harness.** Internal script that opens
   Camera Lock + drives Teams / Zoom / Meet test calls and snapshots the
   share preview, so we can verify exclusion across OS builds.
