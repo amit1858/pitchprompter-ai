@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PitchPrompter AI — Private test build</title>
+  <meta name="description" content="Local-first desktop teleprompter and speaking coach for pitches, interviews, demos, and video calls. Private Windows test build." />
+  <meta name="theme-color" content="#0b0d12" />
+
+  <meta property="og:title" content="PitchPrompter AI — Read naturally on camera" />
+  <meta property="og:description" content="Local-first desktop teleprompter and speaking coach. Private Windows test build." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --bg-elev: #11141b;
+      --bg-elev-2: #161a23;
+      --border: #1f2330;
+      --border-strong: #2b3142;
+      --text: #e7eaf2;
+      --text-muted: #9aa3b8;
+      --accent: #6ea8ff;
+      --accent-strong: #4b8bff;
+      --warn: #fbbf24;
+      --ok: #4ade80;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-strong); text-decoration: underline; }
+    code { background: var(--bg-elev-2); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    nav { position: sticky; top: 0; z-index: 10; background: rgba(11,13,18,0.85);
+      backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+    nav .container { display: flex; align-items: center; height: 56px; gap: 24px; }
+    nav .brand { font-weight: 700; letter-spacing: 0.2px; }
+    nav .brand span { color: var(--accent); }
+    nav .links { margin-left: auto; display: flex; gap: 20px; font-size: 14px; color: var(--text-muted); }
+    nav .links a { color: var(--text-muted); }
+    nav .links a:hover { color: var(--text); text-decoration: none; }
+    @media (max-width: 600px) { nav .links { display: none; } }
+
+    .hero { padding: 88px 0 64px; border-bottom: 1px solid var(--border);
+      background: radial-gradient(1100px 500px at 50% -10%, rgba(110,168,255,0.10), transparent 70%); }
+    .hero h1 { font-size: 56px; line-height: 1.05; letter-spacing: -0.5px; margin: 0 0 20px; max-width: 18ch; }
+    .hero .sub { font-size: 19px; color: var(--text-muted); max-width: 64ch; margin: 0 0 32px; }
+    .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px;
+      border: 1px solid var(--border-strong); color: var(--accent); font-size: 12px;
+      font-weight: 600; letter-spacing: 0.4px; margin-bottom: 18px; text-transform: uppercase; }
+    .btn { display: inline-block; padding: 12px 20px; border-radius: 10px;
+      border: 1px solid var(--border-strong); background: var(--bg-elev-2); color: var(--text);
+      font-weight: 600; font-size: 15px; cursor: pointer; transition: transform 60ms ease, border-color 100ms;
+      text-decoration: none; }
+    .btn:hover { border-color: var(--accent); transform: translateY(-1px); text-decoration: none; }
+    .btn.primary { background: var(--accent); color: #0b0d12; border-color: var(--accent); }
+    .btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: #0b0d12; }
+    @media (max-width: 640px) { .hero { padding: 64px 0 48px; } .hero h1 { font-size: 40px; } }
+
+    section { padding: 72px 0; border-bottom: 1px solid var(--border); }
+    section h2 { font-size: 28px; letter-spacing: -0.3px; margin: 0 0 12px; }
+    section .lead { color: var(--text-muted); max-width: 60ch; margin: 0 0 36px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .col-card { background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; }
+    .col-card h3 { margin: 0 0 12px; font-size: 17px; }
+    .col-card ul { margin: 0; padding-left: 18px; color: var(--text-muted); line-height: 1.85; }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 900px) { .features { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+    .feature { background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; }
+    .feature .icon { font-size: 22px; margin-bottom: 12px; opacity: 0.9; }
+    .feature h3 { margin: 0 0 6px; font-size: 16px; }
+    .feature p { margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.65; }
+
+    .steps { counter-reset: step; display: grid; gap: 14px; }
+    .step { counter-increment: step; background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px 18px 64px; position: relative; }
+    .step::before { content: counter(step); position: absolute; left: 18px; top: 16px;
+      width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #0b0d12;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+    .step h3 { margin: 0 0 4px; font-size: 16px; }
+    .step p { margin: 0; color: var(--text-muted); font-size: 14px; }
+
+    .privacy-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
+    @media (max-width: 720px) { .privacy-list { grid-template-columns: 1fr; } }
+    .pcheck { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; color: var(--text-muted); font-size: 14px; }
+    .pcheck::before { content: "✓"; color: var(--ok); font-weight: 700; }
+
+    .download { background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev-2) 100%);
+      border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 28px;
+      display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; }
+    @media (max-width: 720px) { .download { grid-template-columns: 1fr; } }
+    .download h3 { margin: 0 0 4px; font-size: 18px; }
+    .download p { margin: 0; color: var(--text-muted); font-size: 14px; }
+    .dl-meta { font-size: 12px; color: var(--text-muted); margin-top: 14px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .dl-meta span { padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; }
+
+    .limit { display: grid; gap: 10px; padding: 0; margin: 0; }
+    .limit li { background: var(--bg-elev); border: 1px solid var(--border);
+      border-left: 3px solid var(--warn); padding: 10px 14px; border-radius: 8px;
+      list-style: none; color: var(--text-muted); font-size: 14px; }
+    .limit li strong { color: var(--text); font-weight: 600; }
+
+    .shot { background: var(--bg-elev); border: 1px dashed var(--border-strong);
+      border-radius: var(--radius); aspect-ratio: 16/9; display: flex; align-items: center;
+      justify-content: center; color: var(--text-muted); font-size: 13px; margin-top: 32px; padding: 16px; text-align: center; }
+
+    footer { padding: 40px 0 60px; color: var(--text-muted); font-size: 13px; }
+    footer .row { display: flex; gap: 18px; flex-wrap: wrap; }
+    footer .row .spacer { flex: 1; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <div class="brand">Pitch<span>Prompter</span> AI</div>
+      <div class="links">
+        <a href="#problem">Why</a>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#download">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <div class="badge">Private test build · v0.1</div>
+      <h1>Read naturally on camera without looking away.</h1>
+      <p class="sub">
+        PitchPrompter AI is a local-first desktop teleprompter and speaking coach
+        for pitches, interviews, demos, and video calls. The script sits in a
+        small always-on-top window next to your webcam so you stay camera-facing
+        while you read.
+      </p>
+      <div class="ctas">
+        <a class="btn primary" href="#download">Download private Windows build</a>
+        <a class="btn" href="#how">Read testing instructions</a>
+      </div>
+      <div class="shot">Screenshot placeholder — Camera Lock window pinned above a Teams call</div>
+    </div>
+  </header>
+
+  <section id="problem">
+    <div class="container">
+      <h2>The problem</h2>
+      <p class="lead">Generic teleprompters show text. They don't help you deliver.</p>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>What goes wrong today</h3>
+          <ul>
+            <li>You look away from the camera to read your notes</li>
+            <li>Fixed-speed scrolling either drifts ahead or falls behind</li>
+            <li>You accidentally reveal your notes in a screen share</li>
+            <li>Existing tools don't surface pacing, fillers, or pauses</li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <h3>What PitchPrompter does about it</h3>
+          <ul>
+            <li>Pins the script directly under your webcam</li>
+            <li>Voice Follow advances the script as you actually speak</li>
+            <li>Clear screen-share guidance plus experimental capture hiding</li>
+            <li>Practice mode measures WPM, fillers, long pauses, confidence</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+      <h2>Features</h2>
+      <p class="lead">A small, sharp set. No feature mall.</p>
+      <div class="features">
+        <div class="feature"><div class="icon">🎯</div><h3>Camera Lock Mode</h3><p>Borderless reading surface pinned near your webcam. Top-aligned caret minimises the looking-away tell.</p></div>
+        <div class="feature"><div class="icon">📌</div><h3>Always-on-top floating window</h3><p>Stays above Chrome, Teams, Zoom, Meet, and most apps. Movable, resizable, transparent-capable.</p></div>
+        <div class="feature"><div class="icon">🛡</div><h3>Screen Share Safety guidance</h3><p>In-app banners explaining the safe pattern: share a window, not your full desktop.</p></div>
+        <div class="feature"><div class="icon">🫥</div><h3>Experimental capture exclusion</h3><p>Windows-only opt-in using <code>SetWindowDisplayAffinity</code> to hide the prompter from many screen-share paths. Best-effort, not guaranteed.</p></div>
+        <div class="feature"><div class="icon">🎙</div><h3>Voice Follow</h3><p>Speech-driven auto-advance with forward-only, smoothed cursor. Pauses when you pause; never jumps.</p></div>
+        <div class="feature"><div class="icon">✨</div><h3>BYOK AI rewrite</h3><p>11 actions across tone, length, and structure. Your API key, your provider, your data path.</p></div>
+        <div class="feature"><div class="icon">🔒</div><h3>Local-first privacy</h3><p>Scripts, settings, sessions live only on your device. No account. No telemetry. No analytics SDKs.</p></div>
+        <div class="feature"><div class="icon">📈</div><h3>Practice analytics</h3><p>Words per minute, filler word counts, long pauses, confidence score, post-session summary.</p></div>
+        <div class="feature"><div class="icon">⌨️</div><h3>Keyboard-first</h3><p>Space, R, ↑/↓, +/− — drive the entire prompter without leaving the camera.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="container">
+      <h2>How it works</h2>
+      <p class="lead">Six steps. No setup ceremony.</p>
+      <div class="steps">
+        <div class="step"><h3>Draft or paste your script</h3><p>Local editor. Autosaves to this device only.</p></div>
+        <div class="step"><h3>Improve it with AI if you want</h3><p>Bring your own OpenAI-compatible key. Eleven targeted rewrite actions. Nothing is sent until you click <em>Send to AI provider</em>.</p></div>
+        <div class="step"><h3>Open Camera Lock Mode</h3><p>Pick a placement preset. A small borderless window opens above all other apps.</p></div>
+        <div class="step"><h3>Place it near your webcam</h3><p>Drag the top strip. Reading caret sits within an inch of your camera lens.</p></div>
+        <div class="step"><h3>Share only your presentation or app window</h3><p>Not your full desktop. The in-app banner reminds you. Capture exclusion is an extra layer.</p></div>
+        <div class="step"><h3>Present naturally</h3><p>Manual scroll or Voice Follow. Practice Mode for the rehearsal pass.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="container">
+      <h2>Privacy model</h2>
+      <p class="lead">Local-first isn't a slogan; it's the architecture.</p>
+      <div class="privacy-list">
+        <div class="pcheck">Scripts live in this device's local storage only</div>
+        <div class="pcheck">Your AI API key stays on this device</div>
+        <div class="pcheck">No account, no signup, no email collected</div>
+        <div class="pcheck">No telemetry, no analytics, no crash reporting</div>
+        <div class="pcheck">AI calls happen only when you click and confirm</div>
+        <div class="pcheck">Microphone audio is transcribed locally, never recorded or uploaded</div>
+        <div class="pcheck">Screen-share hiding is best-effort, not guaranteed</div>
+        <div class="pcheck">Wipe all local data anytime from Settings</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="container">
+      <h2>Download</h2>
+      <p class="lead">Private Windows test build. Recommended for trusted testers only.</p>
+      <div class="download">
+        <div>
+          <h3>PitchPrompter AI v0.1 — Private Test Build</h3>
+          <p>Windows x64 portable. Unzip and run. No installer required.</p>
+          <div class="dl-meta">
+            <span>Windows 10 / 11 · x64</span>
+            <span>~3 MB ZIP</span>
+            <span>Unsigned — SmartScreen warning expected</span>
+          </div>
+        </div>
+        <a class="btn primary" href="[DOWNLOAD_ZIP_URL]" download>
+          Download ZIP
+        </a>
+      </div>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px;">
+        Replace <code>[DOWNLOAD_ZIP_URL]</code> in <code>index.html</code> with your hosted ZIP URL
+        (GitHub Release asset, S3, Cloudflare R2, or signed Dropbox/OneDrive link).
+      </p>
+    </div>
+  </section>
+
+  <section id="limitations">
+    <div class="container">
+      <h2>Known limitations</h2>
+      <p class="lead">Calling these out up front so you know what to expect.</p>
+      <ul class="limit">
+        <li><strong>Windows only.</strong> macOS and Linux builds are not produced for v0.1.</li>
+        <li><strong>Unsigned binary.</strong> Windows SmartScreen will warn on first launch. Click "More info → Run anyway".</li>
+        <li><strong>Capture exclusion is experimental.</strong> Honored by Teams / Zoom / Meet / modern OBS. Not honored by legacy GDI capture or hardware capture cards. Not a security guarantee.</li>
+        <li><strong>Full-desktop sharing may still reveal the teleprompter.</strong> Always prefer sharing a specific application window.</li>
+        <li><strong>Voice Follow is not yet in Camera Lock window.</strong> Main teleprompter only for v0.1. Planned for v0.2.</li>
+        <li><strong>Web Speech API accuracy varies</strong> by accent, mic quality, and ambient noise. A local Whisper provider is on the roadmap.</li>
+        <li><strong>No auto-update.</strong> We'll send you the next build directly.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="feedback">
+    <div class="container">
+      <h2>Feedback</h2>
+      <p class="lead">
+        Please test on a real Teams, Zoom, or Meet call. Then fill in
+        <code>FEEDBACK_TEMPLATE.md</code> from the ZIP and send it back.
+        Five minutes is enough.
+      </p>
+      <p>
+        Feedback channel: <a href="[FEEDBACK_FORM_URL]">[FEEDBACK_FORM_URL]</a>
+        (replace this in <code>index.html</code>).
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container row">
+      <div>© <span id="yr"></span> PitchPrompter AI · Private test build</div>
+      <div class="spacer"></div>
+      <a href="#privacy">Privacy</a>
+      <a href="#limitations">Limitations</a>
+      <a href="#download">Download</a>
+    </div>
+  </footer>
+
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "PitchPrompter AI",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": { "open": true },
+      "window": {
+        "all": false,
+        "create": true,
+        "close": true,
+        "show": true,
+        "hide": true,
+        "setAlwaysOnTop": true,
+        "setSize": true,
+        "setPosition": true,
+        "setTitle": true,
+        "setDecorations": true,
+        "setFullscreen": true,
+        "setFocus": true,
+        "startDragging": true
+      },
+      "http": {
+        "all": false,
+        "request": true,
+        "scope": ["https://api.openai.com/*", "https://*.openai.azure.com/*", "https://api.anthropic.com/*"]
+      }
+    },
+    "bundle": {
+      "active": true,
+      "category": "Productivity",
+      "copyright": "",
+      "shortDescription": "Local-first AI teleprompter & speaking coach",
+      "longDescription": "PitchPrompter AI is a local-first teleprompter and speech coach for founders, PMs, job seekers, creators, and professionals.",
+      "deb": { "depends": [] },
+      "externalBin": [],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.pitchprompter.ai",
+      "resources": [],
+      "targets": "all"
+    },
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://api.openai.com https://*.openai.azure.com https://api.anthropic.com; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    },
+    "windows": [
+      {
+        "title": "PitchPrompter AI",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "label": "main"
+      }
+    ]
+  }
+}
