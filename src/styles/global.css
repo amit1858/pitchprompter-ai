@@ -313,7 +313,35 @@ button.ghost.active {
 .mode-badge.mode-manual { color: var(--text-muted); }
 .mode-badge.mode-voice { color: var(--accent); border-color: var(--border-strong); }
 .mode-badge.mode-voice.mode-following { color: #4ade80; }
+.mode-badge.mode-voice.mode-low-confidence { color: #fbbf24; }
 .mode-badge.mode-voice.mode-error { color: #f87171; }
+
+/* Camera Lock voice-status pill (smaller variant of mode-badge for the
+   compact controls bar). */
+.camlock-mode {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.camlock-mode.mode-voice { color: #6ea8ff; border-color: rgba(110,168,255,0.35); }
+.camlock-mode.mode-voice.mode-following { color: #4ade80; border-color: rgba(74,222,128,0.4); }
+.camlock-mode.mode-voice.mode-low-confidence { color: #fbbf24; border-color: rgba(251,191,36,0.4); }
+.camlock-mode.mode-voice.mode-error { color: #f87171; border-color: rgba(248,113,113,0.4); }
+.camlock-notice {
+  font-size: 11px;
+  color: #fbbf24;
+  padding: 4px 10px;
+  background: rgba(251,191,36,0.08);
+  border-top: 1px solid rgba(251,191,36,0.2);
+}
 
 /* Practice */
 .metrics {

@@ -97,34 +97,80 @@ Avoid email attachments — many corporate scanners block unsigned EXEs.
 
 ## v0.2 — MSI / NSIS installer
 
-### Pre-stage bundler tooling (offline-friendly)
+### What's confirmed working (this machine, 2026-06-21)
 
-Tauri's bundler downloads tooling on first run from GitHub. If your build
-host can't reach GitHub (corp network, CI sandbox), pre-stage:
+NSIS installer **builds successfully** after pre-staging tooling. WiX/MSI
+still needs validation but the same pre-stage pattern is expected to work.
+
+**Confirmed artifact:**
+```
+src-tauri\target\release\bundle\nsis\PitchPrompter AI_0.1.0_arm64-setup.exe
+   2.26 MB
+   SHA256: ed3f2f990fbb6884a47f4b3bf0ca5f73b6862b9379f9e6de65cee48b0fe6ecea
+```
+
+Note the `arm64` suffix — this dev machine is ARM64. To produce x64
+installers from an ARM64 host, cross-compile with
+`rustup target add x86_64-pc-windows-msvc` and pass
+`--target x86_64-pc-windows-msvc` to `tauri build`.
+
+### Why pre-staging is required
+
+The Tauri 1.x bundler downloads NSIS + WiX + `nsis_tauri_utils.dll` on
+first run via its own HTTP client. That client requires a linked TLS
+backend at compile time. In some sandboxed / minimal Rust toolchains, the
+default `tauri-cli` binary is built without one and you get:
+
+```
+Unknown Scheme: cannot make HTTPS request because no TLS backend is configured
+```
+
+Pre-staging the binaries into `%LOCALAPPDATA%\tauri\NSIS` (and
+`%LOCALAPPDATA%\tauri\WixTools314`) sidesteps this completely — the
+bundler verifies them by hash and skips the download.
+
+### Pre-stage bundler tooling (offline-friendly) — confirmed procedure
 
 ```powershell
-# WiX 3.14 (for MSI)
-$wix = "$env:LOCALAPPDATA\tauri\WixTools314"
-New-Item -ItemType Directory -Force -Path $wix | Out-Null
-curl.exe -fsSLo "$env:TEMP\wix314.zip" `
-  "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip"
-Expand-Archive -Path "$env:TEMP\wix314.zip" -DestinationPath $wix -Force
-
-# NSIS 3.08 + nsis_tauri_utils plugin (for NSIS)
+# NSIS 3.08 — extract so contents sit at the root of $nsis, not inside nsis-3.08\
 $nsis = "$env:LOCALAPPDATA\tauri\NSIS"
 New-Item -ItemType Directory -Force -Path "$nsis\Plugins\x86-unicode" | Out-Null
-curl.exe -fsSLo "$env:TEMP\nsis-3.zip" `
+$staging = "$env:TEMP\nsis-stage"
+Remove-Item -Recurse -Force $staging -ErrorAction SilentlyContinue
+Invoke-WebRequest -OutFile "$env:TEMP\nsis-3.zip" `
   "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3/nsis-3.zip"
-Expand-Archive -Path "$env:TEMP\nsis-3.zip" -DestinationPath $nsis -Force
-Move-Item "$nsis\nsis-3.08\*" $nsis -Force ; Remove-Item "$nsis\nsis-3.08" -Recurse
-curl.exe -fsSLo "$nsis\Plugins\x86-unicode\nsis_tauri_utils.dll" `
-  "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.4.2/nsis_tauri_utils.dll"
+Expand-Archive -Path "$env:TEMP\nsis-3.zip" -DestinationPath $staging -Force
+Get-ChildItem (Join-Path $staging "nsis-3.08") | Copy-Item -Destination $nsis -Recurse -Force
+
+# nsis_tauri_utils plugin — Tauri 1.8 pins v0.4.1 (SHA-verified).
+# If your Tauri version asks for a different one, the error log shows the URL.
+Invoke-WebRequest -OutFile "$nsis\Plugins\x86-unicode\nsis_tauri_utils.dll" `
+  "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.4.1/nsis_tauri_utils.dll"
+
+# WiX 3.14 (for MSI) — same shape
+$wix = "$env:LOCALAPPDATA\tauri\WixTools314"
+New-Item -ItemType Directory -Force -Path $wix | Out-Null
+Invoke-WebRequest -OutFile "$env:TEMP\wix314.zip" `
+  "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip"
+Expand-Archive -Path "$env:TEMP\wix314.zip" -DestinationPath $wix -Force
 ```
+
+**Gotchas observed:**
+- The NSIS ZIP has a `nsis-3.08\` top-level folder; Tauri wants those
+  files at the **root** of `$nsis`. A naive `Expand-Archive` will leave
+  them nested and Tauri will report "NSIS directory is missing some
+  files. Recreating it." and try to re-download.
+- The `nsis_tauri_utils.dll` version is **SHA-pinned per Tauri release**.
+  If the bundler logs "NSIS directory contains mis-hashed files,
+  Redownloading them" it will print the exact URL it wants — match that
+  version exactly.
 
 ### Build installers
 
 ```powershell
-npm run tauri:build -- --bundles msi nsis
+npm run tauri:build -- --bundles nsis        # NSIS only (confirmed working)
+npm run tauri:build -- --bundles msi         # MSI only (needs WiX pre-stage)
+npm run tauri:build -- --bundles msi nsis    # both
 ```
 
 Outputs under `src-tauri\target\release\bundle\`.
@@ -133,18 +179,28 @@ Outputs under `src-tauri\target\release\bundle\`.
 
 ## Signing (v0.2+)
 
-### Why
+### Investigation summary (2026-06-21)
 
-Removes the Windows SmartScreen "Unknown publisher" warning. Required for
-practically any distribution beyond a tight circle.
+| Question | Finding |
+|---|---|
+| What certificate is required? | A **code-signing certificate** issued by a CA Microsoft trusts. EV (Extended Validation) or OV (Organization Validation). OV is roughly ~$100/year; EV ~$300+/year and requires a hardware token. |
+| Is self-signing useful for private testers? | **No.** A self-signed cert satisfies `signtool` but Windows still shows SmartScreen "Unknown publisher" because the cert chain doesn't reach a trusted root. Tester sees identical UX to unsigned. The only benefit is that you can practice the signing pipeline before buying a real cert. We do **not** ship a self-signed binary. |
+| Is a real CA cert required for SmartScreen trust? | **Yes.** SmartScreen requires a valid chain to a trusted root. With a standard (non-EV) cert, the warning persists until your *publisher identity* has accumulated download reputation — usually a few hundred installs over weeks. With an EV cert, reputation transfers to the cert immediately, so the warning disappears almost on first install. |
+| Can we sign without buying? | Not in a way that helps testers. Microsoft's free signing programs (Trusted Signing / formerly Azure Code Signing) cost ~$10/month + require a Microsoft Partner Network ID, which still costs money. |
+| What about Windows SDK's `MakeCert`? | Generates a self-signed cert — same limitation as above. |
 
-### What
+**Recommendation for v0.1 → v0.2 transition:**
 
-Use an EV (Extended Validation) code-signing certificate from a CA (e.g.
-DigiCert, Sectigo, GlobalSign). EV certs build reputation faster than
-standard certs.
+1. **v0.1 (now):** ship unsigned portable ZIP. Honest SmartScreen warning. Acceptable for 3–5 trusted testers.
+2. **v0.2 dev cycle:** purchase an **OV** code-signing cert (~$100/yr from Sectigo or SSL.com — these are the budget reputable issuers). Build NSIS installer + sign it. Acceptable SmartScreen warning that will fade with downloads.
+3. **v1:** upgrade to **EV** cert if first-install reputation matters (most likely yes for a "speak on camera before an interview" use case).
 
-### How
+**Do not:**
+- Buy from random resellers offering "$10 EV certs". They are either fraudulent or revoked within weeks.
+- Sign with a self-signed cert and ship it as if it were signed.
+- Use someone else's cert under any circumstance.
+
+### How (once a real cert is available)
 
 ```powershell
 # Sign the EXE
@@ -159,18 +215,18 @@ signtool sign `
 # Sign the MSI / NSIS installer too
 signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
   /f mycert.pfx /p $env:CERT_PASS `
-  "src-tauri\target\release\bundle\msi\PitchPrompter AI_0.1.0_x64_en-US.msi"
+  "src-tauri\target\release\bundle\nsis\PitchPrompter AI_0.2.0_x64-setup.exe"
 ```
 
-Tauri 1.6 also supports inline signing via `tauri.conf.json`
+Tauri 1.8 also supports inline signing via `tauri.conf.json`
 `tauri.bundle.windows.certificateThumbprint` — use that once the cert
 is installed in the local cert store.
 
 ### SmartScreen reputation
 
-Even with a valid EV cert, SmartScreen builds reputation over downloads.
+Even with a valid OV cert, SmartScreen builds reputation over downloads.
 Expect the warning to persist for the first few hundred installs and then
-disappear.
+disappear. EV certs short-circuit this.
 
 ---
 

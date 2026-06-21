@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { scriptsRepo, safetyRepo } from "@/lib/storage/repos";
 import type { Script } from "@/types";
 import { applyCaptureExclusion, type CaptureExclusionStatus } from "@/lib/privacy/captureExclusion";
+import { useVoiceFollow } from "./useVoiceFollow";
 
 // Camera Lock Mode: a borderless, always-on-top reading surface designed to sit
 // directly next to a laptop webcam. No app navigation, no recursion.
@@ -46,6 +47,8 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
   const [safety] = useState(() => safetyRepo.get());
   const [safetyBannerDismissed, setSafetyBannerDismissed] = useState(false);
   const [exclusionStatus, setExclusionStatus] = useState<CaptureExclusionStatus | null>(null);
+  const [voiceFollow, setVoiceFollow] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -62,6 +65,19 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
   }, [safety.captureExclusionEnabled]);
 
   const script = useMemo(() => scripts.find((s) => s.id === activeId) ?? null, [scripts, activeId]);
+
+  // Voice Follow shares the same engine as the main teleprompter.
+  // While enabled, vf.offset drives scrolling; manual play/pause is suspended.
+  const vf = useVoiceFollow({
+    enabled: voiceFollow,
+    scriptBody: script?.body ?? null,
+    stageRef,
+    textRef,
+    readingLine: 0.20, // Camera Lock has a small stage; pull the line higher.
+    onUnavailable: (msg) => setVoiceNotice(msg),
+    onForceDisable: () => setVoiceFollow(false),
+  });
+  const effectiveOffset = voiceFollow ? vf.offset : offset;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
@@ -83,11 +99,13 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
   useEffect(() => {
     setOffset(0);
     setRunning(false);
+    setVoiceFollow(false);
   }, [activeId]);
 
   // Scroll engine — pixels-per-second is the dt-stable unit.
+  // Suspended while Voice Follow is on (vf.offset wins).
   useEffect(() => {
-    if (!running) {
+    if (!running || voiceFollow) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       return;
@@ -115,7 +133,7 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [running, prefs.speed]);
+  }, [running, prefs.speed, voiceFollow]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -136,11 +154,16 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
         setPrefs((p) => ({ ...p, fontSize: Math.min(120, p.fontSize + 2) }));
       } else if (e.key === "-" || e.key === "_") {
         setPrefs((p) => ({ ...p, fontSize: Math.max(14, p.fontSize - 2) }));
+      } else if (e.key === "v" || e.key === "V") {
+        if (!script) return;
+        setVoiceFollow((v) => !v);
+        setRunning(false);
+        setVoiceNotice(null);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [script]);
 
   // Focus mode (Phase 2): auto-hide chrome after 3s idle, reappear on mouse move.
   const bumpIdle = useCallback(() => {
@@ -216,20 +239,49 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
           style={{
             fontSize: prefs.fontSize,
             lineHeight: prefs.lineHeight,
-            transform: `translateY(${-offset}px)`,
+            transform: `translateY(${-effectiveOffset}px)`,
             maxWidth: `${prefs.contentWidth}%`,
           }}
         >
-          {script?.body || "No script selected. Open Scripts in the main window."}
+          {script ? (
+            voiceFollow && vf.tokens.length > 0 ? (
+              vf.tokens.map((t) => (
+                <span key={t.i} data-i={t.i} className={t.i === vf.cursor ? "vf-current" : undefined}>
+                  {t.raw}{" "}
+                </span>
+              ))
+            ) : (
+              script.body
+            )
+          ) : (
+            "No script selected. Open Scripts in the main window."
+          )}
         </div>
       </div>
 
       {/* Bottom controls — hidden in focus mode */}
       <div className="camlock-controls">
-        <button className="primary sm" onClick={() => setRunning((r) => !r)}>
+        <button className="primary sm" onClick={() => setRunning((r) => !r)} disabled={voiceFollow}>
           {running ? "Pause" : "Start"}
         </button>
-        <button className="sm" onClick={() => { setOffset(0); setRunning(false); }}>Reset</button>
+        <button className="sm" onClick={() => { setOffset(0); setRunning(false); vf.reset(); }}>Reset</button>
+        <button
+          className={`sm ${voiceFollow ? "primary" : ""}`}
+          title={vf.supported
+            ? "Voice Follow: teleprompter advances as you speak. Audio stays on this device."
+            : "Voice Follow unavailable: Web Speech API not exposed in this runtime."}
+          disabled={!script || !vf.supported}
+          onClick={() => {
+            setVoiceNotice(null);
+            setVoiceFollow((v) => {
+              const next = !v;
+              if (next) setRunning(false);
+              return next;
+            });
+          }}
+        >
+          {voiceFollow ? "🎙 Voice ✓" : "🎙 Voice"}
+        </button>
         <select
           className="sm"
           value={activeId ?? ""}
@@ -240,6 +292,19 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
             <option key={s.id} value={s.id}>{s.title}</option>
           ))}
         </select>
+        <span className={`camlock-mode mode-${voiceFollow ? "voice" : "manual"} mode-${vf.status}`}>
+          {voiceFollow
+            ? vf.status === "following"
+              ? "● Following"
+              : vf.status === "listening"
+                ? "● Listening…"
+                : vf.status === "low-confidence"
+                  ? "● Low confidence"
+                  : vf.status === "error"
+                    ? "● Error"
+                    : "● Voice"
+            : "● Manual"}
+        </span>
         <span className="camlock-spacer" />
         <label className="camlock-mini" title="Font size">
           A
@@ -248,10 +313,11 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
             onChange={(e) => setPrefs((p) => ({ ...p, fontSize: Number(e.target.value) }))}
           />
         </label>
-        <label className="camlock-mini" title="Scroll speed (px/s)">
+        <label className="camlock-mini" title="Scroll speed (px/s) — disabled in Voice Follow">
           ⏩
           <input
             type="range" min={10} max={300} value={prefs.speed}
+            disabled={voiceFollow}
             onChange={(e) => setPrefs((p) => ({ ...p, speed: Number(e.target.value) }))}
           />
         </label>
@@ -278,6 +344,9 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
           ◑
         </button>
       </div>
+      {voiceNotice && (
+        <div className="camlock-notice" role="alert">⚠ {voiceNotice}</div>
+      )}
     </div>
   );
 }

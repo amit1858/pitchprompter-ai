@@ -3,8 +3,7 @@ import { scriptsRepo } from "@/lib/storage/repos";
 import type { Script } from "@/types";
 import { toast } from "@/components/Toast";
 import { launchCameraLock, Placement } from "./launchCameraLock";
-import { BrowserSpeechProvider } from "@/lib/speech/BrowserSpeechProvider";
-import { alignWindow, tokenizeScript, tokenizeSpoken } from "./voiceAlign";
+import { useVoiceFollow } from "./useVoiceFollow";
 
 interface Props {
   initialScriptId: string | null;
@@ -62,21 +61,28 @@ export function TeleprompterPage({ initialScriptId }: Props) {
   const [offset, setOffset] = useState(0);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [voiceFollow, setVoiceFollow] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState<"idle" | "listening" | "following" | "error">("idle");
   const stageRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTickRef = useRef<number>(0);
   const idleTimerRef = useRef<number | null>(null);
-  const voiceRef = useRef<BrowserSpeechProvider | null>(null);
-  const spokenRef = useRef<string[]>([]);
-  const cursorRef = useRef<number>(0); // last aligned script word index
-  const targetOffsetRef = useRef<number>(0);
-  const lastMatchAtRef = useRef<number>(0);
-  const followRafRef = useRef<number | null>(null);
 
   const script = useMemo(() => scripts.find((s) => s.id === scriptId) ?? null, [scripts, scriptId]);
-  const scriptTokens = useMemo(() => (script ? tokenizeScript(script.body) : []), [script]);
+
+  const vf = useVoiceFollow({
+    enabled: voiceFollow,
+    scriptBody: script?.body ?? null,
+    stageRef,
+    textRef,
+    readingLine: prefs.readingLine === "camera-top" ? 0.30 : 0.45,
+    onUnavailable: (msg) => toast(msg),
+    onForceDisable: () => setVoiceFollow(false),
+  });
+  const scriptTokens = vf.tokens;
+  const voiceStatus = vf.status;
+  // While Voice Follow is on, its offset wins. Otherwise the manual scroll
+  // engine drives `offset` below.
+  const effectiveOffset = voiceFollow ? vf.offset : offset;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
@@ -85,9 +91,6 @@ export function TeleprompterPage({ initialScriptId }: Props) {
   useEffect(() => {
     setOffset(0);
     setRunning(false);
-    cursorRef.current = 0;
-    spokenRef.current = [];
-    targetOffsetRef.current = 0;
   }, [scriptId]);
 
   // Scroll engine — disabled while Voice Follow drives the offset.
@@ -122,106 +125,8 @@ export function TeleprompterPage({ initialScriptId }: Props) {
     };
   }, [running, prefs.speed, voiceFollow]);
 
-  // Voice Follow: speech-driven offset target + LERP loop.
-  // Architecture: speech events update `targetOffsetRef`; a separate RAF loop
-  // eases `offset` toward the target so we never jump or stutter even when
-  // recognition fires irregularly.
-  useEffect(() => {
-    if (!voiceFollow || !script) {
-      const v = voiceRef.current;
-      if (v) v.stop();
-      voiceRef.current = null;
-      if (followRafRef.current) cancelAnimationFrame(followRafRef.current);
-      followRafRef.current = null;
-      setVoiceStatus("idle");
-      return;
-    }
-    const provider = new BrowserSpeechProvider();
-    if (!provider.isSupported()) {
-      setVoiceStatus("error");
-      toast("Voice Follow needs Web Speech API (Chromium/Edge/WebView2).");
-      setVoiceFollow(false);
-      return;
-    }
-    voiceRef.current = provider;
-    setVoiceStatus("listening");
-    spokenRef.current = [];
-    cursorRef.current = 0;
-
-    provider.start({
-      onResult: (r) => {
-        const tokens = tokenizeSpoken(r.text);
-        if (!tokens.length) return;
-        // Keep only the most recent ~24 spoken tokens; alignment window is 5.
-        const merged = [...spokenRef.current, ...tokens].slice(-24);
-        spokenRef.current = merged;
-        const res = alignWindow(scriptTokens, merged, cursorRef.current, {
-          windowSize: 5,
-          lookahead: 24,
-          minAligned: 3,
-          maxGaps: 1,
-        });
-        if (!res.matched || res.scriptIndex < 0) return;
-        // Never jump backward more than 1 token.
-        if (res.scriptIndex < cursorRef.current - 1) return;
-        cursorRef.current = res.scriptIndex;
-        lastMatchAtRef.current = performance.now();
-        setVoiceStatus("following");
-        // Locate the rendered word and compute its offsetTop. Reading line
-        // sits at 40vh (camera-top) or 50vh (center) of the stage.
-        const text = textRef.current;
-        const stage = stageRef.current;
-        if (!text || !stage) return;
-        const el = text.querySelector<HTMLElement>(`[data-i="${res.scriptIndex}"]`);
-        if (!el) return;
-        const readingLineY = stage.clientHeight * (prefs.readingLine === "camera-top" ? 0.30 : 0.45);
-        targetOffsetRef.current = Math.max(0, el.offsetTop - readingLineY);
-      },
-      onError: (e) => {
-        // "no-speech" / "aborted" are routine — only surface real failures.
-        if (e.code === "not-allowed" || e.code === "service-not-allowed") {
-          toast("Microphone permission denied for Voice Follow.");
-          setVoiceStatus("error");
-          setVoiceFollow(false);
-        }
-      },
-      onEnd: () => {
-        // Browser STT auto-stops on long silence; auto-restart while opted-in.
-        if (voiceRef.current === provider && voiceFollow) {
-          provider.start({ onResult: () => {}, onEnd: () => {} }).catch(() => {});
-        }
-      },
-    }).catch(() => {
-      setVoiceStatus("error");
-      setVoiceFollow(false);
-    });
-
-    const lerp = () => {
-      setOffset((cur) => {
-        const target = targetOffsetRef.current;
-        const delta = target - cur;
-        // Settle within 0.5px; otherwise ease 12% per frame (~150ms time const at 60fps).
-        if (Math.abs(delta) < 0.5) return cur;
-        return cur + delta * 0.12;
-      });
-      // Idle indicator if no match for > 1500ms.
-      if (performance.now() - lastMatchAtRef.current > 1500 && voiceStatus !== "listening") {
-        setVoiceStatus("listening");
-      }
-      followRafRef.current = requestAnimationFrame(lerp);
-    };
-    lastMatchAtRef.current = performance.now();
-    followRafRef.current = requestAnimationFrame(lerp);
-
-    return () => {
-      provider.stop();
-      if (voiceRef.current === provider) voiceRef.current = null;
-      if (followRafRef.current) cancelAnimationFrame(followRafRef.current);
-      followRafRef.current = null;
-    };
-    // We intentionally exclude voiceStatus to avoid re-subscribing on every status change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceFollow, script, scriptTokens, prefs.readingLine]);
+  // Voice Follow is implemented in the shared useVoiceFollow hook above.
+  // It owns its own mic, alignment, lerp, and offset. We just consume vf.offset.
 
   // Focus Mode: auto-hide controls after 3 s of mouse idle; reappear on move.
   // Only auto-hides while the teleprompter is actually running.
@@ -343,12 +248,12 @@ export function TeleprompterPage({ initialScriptId }: Props) {
               maxWidth: `${prefs.contentWidth}%`,
               marginLeft: "auto",
               marginRight: "auto",
-              transform: `translateY(${-offset}px) ${prefs.mirror ? "scaleX(-1)" : ""}`,
+              transform: `translateY(${-effectiveOffset}px) ${prefs.mirror ? "scaleX(-1)" : ""}`,
             }}
           >
             {voiceFollow && scriptTokens.length > 0 ? (
               scriptTokens.map((t) => (
-                <span key={t.i} data-i={t.i} className={t.i === cursorRef.current ? "vf-current" : undefined}>
+                <span key={t.i} data-i={t.i} className={t.i === vf.cursor ? "vf-current" : undefined}>
                   {t.raw}{" "}
                 </span>
               ))
@@ -441,9 +346,11 @@ export function TeleprompterPage({ initialScriptId }: Props) {
                 ? "● Voice Follow — following"
                 : voiceStatus === "listening"
                   ? "● Voice Follow — listening…"
-                  : voiceStatus === "error"
-                    ? "● Voice Follow — error"
-                    : "● Voice Follow"
+                  : voiceStatus === "low-confidence"
+                    ? "● Voice Follow — low confidence"
+                    : voiceStatus === "error"
+                      ? "● Voice Follow — error"
+                      : "● Voice Follow"
               : "● Manual Scroll"}
           </div>
           {voiceFollow && (
