@@ -3,6 +3,8 @@ import { scriptsRepo, safetyRepo } from "@/lib/storage/repos";
 import type { Script } from "@/types";
 import { applyCaptureExclusion, type CaptureExclusionStatus } from "@/lib/privacy/captureExclusion";
 import { useVoiceFollow } from "./useVoiceFollow";
+import { VoiceFollowDebugPanel } from "./VoiceFollowDebugPanel";
+import { isVoiceFollowDebugEnabled } from "./voiceFollowDebug";
 
 // Camera Lock Mode: a borderless, always-on-top reading surface designed to sit
 // directly next to a laptop webcam. No app navigation, no recursion.
@@ -347,6 +349,7 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
       {voiceNotice && (
         <div className="camlock-notice" role="alert">⚠ {voiceNotice}</div>
       )}
+      {isVoiceFollowDebugEnabled() && <VoiceFollowDebugPanel />}
     </div>
   );
 }

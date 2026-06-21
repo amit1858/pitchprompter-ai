@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserSpeechProvider } from "@/lib/speech/BrowserSpeechProvider";
 import { alignWindow, tokenizeScript, tokenizeSpoken, type ScriptWord } from "./voiceAlign";
+import { voiceFollowDebug } from "./voiceFollowDebug";
 
 export type VoiceFollowStatus =
   | "idle"
@@ -118,10 +119,12 @@ export function useVoiceFollow({
       if (followRafRef.current) cancelAnimationFrame(followRafRef.current);
       followRafRef.current = null;
       setStatus("idle");
+      voiceFollowDebug.status("idle");
       return;
     }
     if (!supported) {
       setStatus("error");
+      voiceFollowDebug.status("error");
       onUnavailable?.("Web Speech API is not available in this runtime.");
       onForceDisable?.();
       return;
@@ -130,6 +133,8 @@ export function useVoiceFollow({
     const provider = new BrowserSpeechProvider();
     providerRef.current = provider;
     setStatus("listening");
+    voiceFollowDebug.reset();
+    voiceFollowDebug.status("listening");
     spokenRef.current = [];
     cursorRef.current = 0;
     setCursor(0);
@@ -140,22 +145,53 @@ export function useVoiceFollow({
       onResult: (r: { text: string; isFinal: boolean }) => {
         if (cancelled) return;
         const toks = tokenizeSpoken(r.text);
-        if (!toks.length) return;
+        if (!toks.length) {
+          voiceFollowDebug.speech({
+            text: r.text,
+            normalized: "",
+            newTokens: 0,
+            buffer: spokenRef.current,
+            isFinal: r.isFinal,
+          });
+          return;
+        }
         const merged = [...spokenRef.current, ...toks].slice(-24);
         spokenRef.current = merged;
+        voiceFollowDebug.speech({
+          text: r.text,
+          normalized: toks.join(" "),
+          newTokens: toks.length,
+          buffer: merged,
+          isFinal: r.isFinal,
+        });
         const script = tokensRef.current;
         if (!script.length) return;
+        const windowStart = Math.max(0, cursorRef.current);
+        const lookahead = 24;
+        const windowEnd = Math.min(script.length, windowStart + lookahead);
+        const recent = merged.slice(-5);
         const res = alignWindow(script, merged, cursorRef.current, {
           windowSize: 5,
-          lookahead: 24,
+          lookahead,
           minAligned: 3,
           maxGaps: 1,
+        });
+        voiceFollowDebug.alignment({
+          scriptTokenCount: script.length,
+          cursorIndex: cursorRef.current,
+          windowStart,
+          windowEnd,
+          recent,
+          matched: res.matched,
+          alignedCount: res.alignedCount,
+          alignedScriptIndex: res.scriptIndex,
         });
         if (!res.matched || res.scriptIndex < 0) {
           // Engine is hearing tokens but can't align — flag as low-confidence,
           // but DO NOT move the cursor. This is the "never jump randomly" rule.
           if (performance.now() - lastMatchAtRef.current > 1200) {
             setStatus("low-confidence");
+            voiceFollowDebug.status("low-confidence");
           }
           return;
         }
@@ -164,6 +200,7 @@ export function useVoiceFollow({
         setCursor(res.scriptIndex);
         lastMatchAtRef.current = performance.now();
         setStatus("following");
+        voiceFollowDebug.status("following");
         const text = textRef.current;
         const stage = stageRef.current;
         if (!text || !stage) return;
@@ -176,10 +213,12 @@ export function useVoiceFollow({
         if (cancelled) return;
         if (e.code === "not-allowed" || e.code === "service-not-allowed" || e.code === "permission") {
           setStatus("error");
+          voiceFollowDebug.status("error");
           onUnavailable?.("Microphone permission denied for Voice Follow.");
           onForceDisable?.();
         } else if (e.code === "unsupported") {
           setStatus("error");
+          voiceFollowDebug.status("error");
           onUnavailable?.("Voice Follow needs Web Speech API.");
           onForceDisable?.();
         }
@@ -192,6 +231,7 @@ export function useVoiceFollow({
           provider.start(handlers).catch(() => {
             // Silent fallback; next user toggle will retry cleanly.
             setStatus("error");
+            voiceFollowDebug.status("error");
           });
         }
       },
@@ -200,6 +240,7 @@ export function useVoiceFollow({
     provider.start(handlers).catch(() => {
       if (cancelled) return;
       setStatus("error");
+      voiceFollowDebug.status("error");
       onForceDisable?.();
     });
 
@@ -213,7 +254,13 @@ export function useVoiceFollow({
       // Idle indicator: drop back to "listening" after 1.5s of no match.
       const since = performance.now() - lastMatchAtRef.current;
       if (since > 1500) {
-        setStatus((s) => (s === "following" ? "listening" : s));
+        setStatus((s) => {
+          if (s === "following") {
+            voiceFollowDebug.status("listening");
+            return "listening";
+          }
+          return s;
+        });
       }
       followRafRef.current = requestAnimationFrame(lerp);
     };

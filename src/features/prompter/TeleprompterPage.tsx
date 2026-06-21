@@ -4,6 +4,8 @@ import type { Script } from "@/types";
 import { toast } from "@/components/Toast";
 import { launchCameraLock, Placement } from "./launchCameraLock";
 import { useVoiceFollow } from "./useVoiceFollow";
+import { VoiceFollowDebugPanel } from "./VoiceFollowDebugPanel";
+import { isVoiceFollowDebugEnabled } from "./voiceFollowDebug";
 
 interface Props {
   initialScriptId: string | null;
@@ -360,6 +362,7 @@ export function TeleprompterPage({ initialScriptId }: Props) {
           )}
         </div>
       </div>
+      {isVoiceFollowDebugEnabled() && <VoiceFollowDebugPanel />}
     </>
   );
 }
