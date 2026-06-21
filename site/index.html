@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PitchPrompter AI — Private test build</title>
-  <meta name="description" content="Local-first desktop teleprompter and speaking coach for pitches, interviews, demos, and video calls. Private Windows test build." />
+  <title>PitchPrompter AI — Your AI Speaking Companion</title>
+  <meta name="description" content="An AI Speaking Companion for interviews, demos, and presentations. Combines a desktop teleprompter, AI script coaching, and speech-driven scrolling. Local-first. Private Windows test build." />
   <meta name="theme-color" content="#0b0d12" />
 
-  <meta property="og:title" content="PitchPrompter AI — Read naturally on camera" />
-  <meta property="og:description" content="Local-first desktop teleprompter and speaking coach. Private Windows test build." />
+  <meta property="og:title" content="PitchPrompter AI — Your AI Speaking Companion" />
+  <meta property="og:description" content="Stay camera-facing during interviews, demos, and presentations. Desktop teleprompter + AI coaching + speech-driven scrolling. Local-first." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="hero-camera-lock.jpg" />
 
   <style>
     :root {
@@ -116,6 +117,52 @@
       border-radius: var(--radius); aspect-ratio: 16/9; display: flex; align-items: center;
       justify-content: center; color: var(--text-muted); font-size: 13px; margin-top: 32px; padding: 16px; text-align: center; }
 
+    .hero-shot { margin: 44px auto 0; max-width: 980px; }
+    .hero-shot figure { margin: 0; }
+    .hero-shot picture, .hero-shot img {
+      display: block; width: 100%; height: auto; border-radius: 14px;
+      border: 1px solid var(--border-strong);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.04) inset,
+        0 20px 50px -20px rgba(0,0,0,0.85),
+        0 40px 100px -30px rgba(110,168,255,0.18);
+      background: #0b0d12;
+    }
+    .hero-shot figcaption {
+      margin-top: 14px; color: var(--text-muted); font-size: 13px;
+      text-align: center; max-width: 64ch; margin-left: auto; margin-right: auto; line-height: 1.55;
+    }
+    @media (max-width: 640px) { .hero-shot { margin-top: 32px; } }
+
+    .diff { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 980px) { .diff { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .diff { grid-template-columns: 1fr; } }
+    .diff-card { background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px; position: relative; }
+    .diff-card .tag { display: inline-block; font-size: 11px; letter-spacing: 0.6px;
+      text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+    .diff-card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.2px; }
+    .diff-card p { margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+    .usecases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 880px) { .usecases { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .usecases { grid-template-columns: 1fr; } }
+    .uc { background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px; }
+    .uc h3 { margin: 0 0 6px; font-size: 15px; }
+    .uc p { margin: 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
+
+    .vision { background: linear-gradient(180deg, rgba(110,168,255,0.06), transparent);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; }
+    .vision h2 { margin-top: 0; }
+    .vision .vlists { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+    @media (max-width: 640px) { .vision .vlists { grid-template-columns: 1fr; } }
+    .vision .vlist h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.5px;
+      text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
+    .vision .vlist ul { margin: 0; padding-left: 18px; color: var(--text); line-height: 1.85; font-size: 14.5px; }
+    .vision .vnote { margin-top: 18px; color: var(--text-muted); font-size: 13px;
+      border-left: 2px solid var(--border-strong); padding-left: 12px; }
+
     footer { padding: 40px 0 60px; color: var(--text-muted); font-size: 13px; }
     footer .row { display: flex; gap: 18px; flex-wrap: wrap; }
     footer .row .spacer { flex: 1; }
@@ -127,9 +174,10 @@
     <div class="container">
       <div class="brand">Pitch<span>Prompter</span> AI</div>
       <div class="links">
-        <a href="#problem">Why</a>
+        <a href="#why">Why</a>
         <a href="#features">Features</a>
         <a href="#how">How it works</a>
+        <a href="#built-for">Built for</a>
         <a href="#privacy">Privacy</a>
         <a href="#download">Download</a>
       </div>
@@ -138,19 +186,31 @@
 
   <header class="hero">
     <div class="container">
-      <div class="badge">Private test build · v0.1</div>
-      <h1>Read naturally on camera without looking away.</h1>
+      <div class="badge">AI Speaking Companion · Private test build v0.1</div>
+      <h1>Stay camera-facing during interviews, demos, and presentations.</h1>
       <p class="sub">
-        PitchPrompter AI is a local-first desktop teleprompter and speaking coach
-        for pitches, interviews, demos, and video calls. The script sits in a
-        small always-on-top window next to your webcam so you stay camera-facing
-        while you read.
+        PitchPrompter AI combines a desktop teleprompter, AI script coaching, and
+        speech-driven scrolling in one local-first application.
       </p>
       <div class="ctas">
-        <a class="btn primary" href="#download">Download private Windows build</a>
-        <a class="btn" href="#how">Read testing instructions</a>
+        <a class="btn primary" href="#download">Download Private Windows Build</a>
+        <a class="btn" href="#how">See How It Works</a>
       </div>
-      <div class="shot">Screenshot placeholder — Camera Lock window pinned above a Teams call</div>
+
+      <div class="hero-shot">
+        <figure>
+          <picture>
+            <source srcset="hero-camera-lock.webp" type="image/webp" />
+            <img src="hero-camera-lock.jpg"
+                 alt="PitchPrompter AI Camera Lock window floating near the top of a real Windows desktop, pinned above other applications"
+                 width="1400" height="544" loading="eager" decoding="async" fetchpriority="high" />
+          </picture>
+          <figcaption>
+            Camera Lock Mode keeps your script near the webcam so you stay
+            camera-facing during interviews, demos, and presentations.
+          </figcaption>
+        </figure>
+      </div>
     </div>
   </header>
 
@@ -176,6 +236,35 @@
             <li>Clear screen-share guidance plus experimental capture hiding</li>
             <li>Practice mode measures WPM, fillers, long pauses, confidence</li>
           </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="container">
+      <h2>Why PitchPrompter AI?</h2>
+      <p class="lead">It is not just a teleprompter. It is the speaking companion you wish you had before every important call.</p>
+      <div class="diff">
+        <div class="diff-card">
+          <span class="tag">01 · Camera Lock</span>
+          <h3>Eye contact, not distracted glances</h3>
+          <p>Keep your script close to the webcam so your audience sees eye contact instead of distracted glances.</p>
+        </div>
+        <div class="diff-card">
+          <span class="tag">02 · Voice Follow</span>
+          <h3>The script keeps up with you</h3>
+          <p>The teleprompter follows your speech instead of forcing you to match a fixed scrolling speed.</p>
+        </div>
+        <div class="diff-card">
+          <span class="tag">03 · AI Speaking Coach</span>
+          <h3>Prepare like a pro</h3>
+          <p>Rewrite scripts, improve clarity, generate stronger openings, and practice delivery before important conversations.</p>
+        </div>
+        <div class="diff-card">
+          <span class="tag">04 · Local-First Privacy</span>
+          <h3>Your words stay yours</h3>
+          <p>No account, no telemetry, no cloud storage. Your scripts and API keys remain on your device.</p>
         </div>
       </div>
     </div>
@@ -210,6 +299,21 @@
         <div class="step"><h3>Place it near your webcam</h3><p>Drag the top strip. Reading caret sits within an inch of your camera lens.</p></div>
         <div class="step"><h3>Share only your presentation or app window</h3><p>Not your full desktop. The in-app banner reminds you. Capture exclusion is an extra layer.</p></div>
         <div class="step"><h3>Present naturally</h3><p>Manual scroll or Voice Follow. Practice Mode for the rehearsal pass.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="built-for">
+    <div class="container">
+      <h2>Built for</h2>
+      <p class="lead">High-stakes speaking situations where the words have to land.</p>
+      <div class="usecases">
+        <div class="uc"><h3>Product Managers</h3><p>Present roadmaps, strategy reviews, and stakeholder updates.</p></div>
+        <div class="uc"><h3>Job Seekers</h3><p>Prepare for interviews and tell your story confidently.</p></div>
+        <div class="uc"><h3>Founders</h3><p>Pitch investors, customers, and partners.</p></div>
+        <div class="uc"><h3>Sales Professionals</h3><p>Deliver demos without looking away from the customer.</p></div>
+        <div class="uc"><h3>Content Creators</h3><p>Record videos while maintaining natural eye contact.</p></div>
+        <div class="uc"><h3>Corporate Presenters</h3><p>Handle executive reviews and company-wide presentations.</p></div>
       </div>
     </div>
   </section>
@@ -268,6 +372,42 @@
         <li><strong>Web Speech API accuracy varies</strong> by accent, mic quality, and ambient noise. A local Whisper provider is on the roadmap.</li>
         <li><strong>No auto-update.</strong> We'll send you the next build directly.</li>
       </ul>
+    </div>
+  </section>
+
+  <section id="vision">
+    <div class="container">
+      <div class="vision">
+        <h2>More than a teleprompter.</h2>
+        <p class="lead" style="margin-bottom: 8px;">
+          PitchPrompter AI is evolving into an AI Speaking Companion that helps
+          people prepare, practice, and deliver high-stakes conversations with
+          confidence.
+        </p>
+        <div class="vlists">
+          <div class="vlist">
+            <h4>Today</h4>
+            <ul>
+              <li>Camera Lock</li>
+              <li>Voice Follow</li>
+              <li>AI Rewrite</li>
+            </ul>
+          </div>
+          <div class="vlist">
+            <h4>Roadmap direction</h4>
+            <ul>
+              <li>Interview Mode</li>
+              <li>Presentation Mode</li>
+              <li>Rehearsal Intelligence</li>
+              <li>Personalized Speaking Feedback</li>
+            </ul>
+          </div>
+        </div>
+        <p class="vnote">
+          Roadmap items are direction, not commitments. Today's product is the
+          v0.1 build above. We will not ship something we cannot stand behind.
+        </p>
+      </div>
     </div>
   </section>
 
