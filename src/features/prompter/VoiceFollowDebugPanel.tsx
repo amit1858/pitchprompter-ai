@@ -33,11 +33,14 @@ export function VoiceFollowDebugPanel() {
       </div>
 
       <Section title="Speech">
-        <Row k="lastTranscript" v={`"${d.lastTranscript}"`} />
+        <Row k="rawTranscript" v={`"${d.rawTranscript}"`} />
+        <Row k="emittedDelta" v={`"${d.emittedDelta}"`} highlight={d.emittedDelta ? "ok" : undefined} />
         <Row k="normalized" v={`"${d.normalizedTranscript}"`} />
+        <Row k="resultIndex" v={d.resultIndex < 0 ? "—" : String(d.resultIndex)} />
         <Row k="newTokens" v={String(d.newTokensThisEvent)} />
         <Row k="isFinal" v={String(d.lastIsFinal)} />
         <Row k="events" v={String(d.speechEventCount)} />
+        <Row k="suppressed" v={String(d.duplicateSuppressedCount)} />
         <Row k="bufferCount" v={String(d.bufferTokenCount)} />
         <Row k="buffer" v={d.bufferTokens.join(" ") || "(empty)"} />
         {sinceSpeech !== null && <Row k="ageMs" v={`${sinceSpeech}`} />}

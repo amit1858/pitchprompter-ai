@@ -142,27 +142,34 @@ export function useVoiceFollow({
     let cancelled = false;
 
     const handlers = {
-      onResult: (r: { text: string; isFinal: boolean }) => {
+      onResult: (r: { text: string; isFinal: boolean; resultIndex?: number; rawTranscript?: string }) => {
         if (cancelled) return;
         const toks = tokenizeSpoken(r.text);
+        const suppressed = providerRef.current?.getDuplicateSuppressedCount?.() ?? 0;
         if (!toks.length) {
           voiceFollowDebug.speech({
-            text: r.text,
+            rawTranscript: r.rawTranscript ?? r.text,
+            emittedDelta: r.text,
             normalized: "",
             newTokens: 0,
+            resultIndex: r.resultIndex ?? -1,
             buffer: spokenRef.current,
             isFinal: r.isFinal,
+            duplicateSuppressedCount: suppressed,
           });
           return;
         }
         const merged = [...spokenRef.current, ...toks].slice(-24);
         spokenRef.current = merged;
         voiceFollowDebug.speech({
-          text: r.text,
+          rawTranscript: r.rawTranscript ?? r.text,
+          emittedDelta: r.text,
           normalized: toks.join(" "),
           newTokens: toks.length,
+          resultIndex: r.resultIndex ?? -1,
           buffer: merged,
           isFinal: r.isFinal,
+          duplicateSuppressedCount: suppressed,
         });
         const script = tokensRef.current;
         if (!script.length) return;

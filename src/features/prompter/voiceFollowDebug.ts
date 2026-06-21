@@ -9,12 +9,15 @@ import { useSyncExternalStore } from "react";
 
 export interface VoiceFollowDebugSnapshot {
   // Speech recognition
-  lastTranscript: string;          // exact .text from provider
-  normalizedTranscript: string;    // joined tokenizeSpoken(...) output
+  rawTranscript: string;           // full accumulated transcript for the active resultIndex
+  emittedDelta: string;            // exact .text emitted to the consumer (post-delta)
+  normalizedTranscript: string;    // joined tokenizeSpoken(delta) output
   newTokensThisEvent: number;      // tokens added by THIS event
+  resultIndex: number;             // Web Speech result segment index for this event
   bufferTokens: string[];          // current 24-word ring buffer
   bufferTokenCount: number;        // bufferTokens.length
   speechEventCount: number;        // total onResult invocations since start
+  duplicateSuppressedCount: number;// events the provider skipped due to empty delta
   lastIsFinal: boolean;
   speechAt: number;                // performance.now() of last speech event
 
@@ -37,12 +40,15 @@ export interface VoiceFollowDebugSnapshot {
 }
 
 const EMPTY: VoiceFollowDebugSnapshot = {
-  lastTranscript: "",
+  rawTranscript: "",
+  emittedDelta: "",
   normalizedTranscript: "",
   newTokensThisEvent: 0,
+  resultIndex: -1,
   bufferTokens: [],
   bufferTokenCount: 0,
   speechEventCount: 0,
+  duplicateSuppressedCount: 0,
   lastIsFinal: false,
   speechAt: 0,
   scriptTokenCount: 0,
@@ -82,19 +88,25 @@ export const voiceFollowDebug = {
     emit();
   },
   speech(input: {
-    text: string;
+    rawTranscript: string;
+    emittedDelta: string;
     normalized: string;
     newTokens: number;
+    resultIndex: number;
     buffer: string[];
     isFinal: boolean;
+    duplicateSuppressedCount: number;
   }) {
     update({
-      lastTranscript: input.text,
+      rawTranscript: input.rawTranscript,
+      emittedDelta: input.emittedDelta,
       normalizedTranscript: input.normalized,
       newTokensThisEvent: input.newTokens,
+      resultIndex: input.resultIndex,
       bufferTokens: input.buffer,
       bufferTokenCount: input.buffer.length,
       speechEventCount: snapshot.speechEventCount + 1,
+      duplicateSuppressedCount: input.duplicateSuppressedCount,
       lastIsFinal: input.isFinal,
       speechAt: performance.now(),
     });
