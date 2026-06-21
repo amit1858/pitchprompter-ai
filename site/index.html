@@ -98,14 +98,68 @@
       padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; color: var(--text-muted); font-size: 14px; }
     .pcheck::before { content: "✓"; color: var(--ok); font-weight: 700; }
 
-    .download { background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev-2) 100%);
-      border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 28px;
-      display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; }
-    @media (max-width: 720px) { .download { grid-template-columns: 1fr; } }
-    .download h3 { margin: 0 0 4px; font-size: 18px; }
-    .download p { margin: 0; color: var(--text-muted); font-size: 14px; }
-    .dl-meta { font-size: 12px; color: var(--text-muted); margin-top: 14px; display: flex; gap: 14px; flex-wrap: wrap; }
-    .dl-meta span { padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; }
+    /* Download v2 — version card */
+    .dlv {
+      background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev-2) 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .dlv-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .dlv-head h3 { margin: 0 0 4px; font-size: 19px; letter-spacing: -0.2px; }
+    .dlv-head .sub { color: var(--text-muted); font-size: 13.5px; margin: 0; }
+    .dlv-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 600; letter-spacing: 0.4px;
+      text-transform: uppercase;
+      background: rgba(251,191,36,0.10);
+      color: var(--warn);
+      border: 1px solid rgba(251,191,36,0.3);
+      white-space: nowrap;
+    }
+    .dlv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px 24px; margin: 0 0 22px;
+      padding: 18px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .dlv-grid dt {
+      font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 4px; font-weight: 600;
+    }
+    .dlv-grid dd { margin: 0; font-size: 14px; color: var(--text); }
+    .dlv-grid dd code {
+      font-size: 11.5px; word-break: break-all; background: var(--bg);
+      padding: 2px 6px; border-radius: 4px; display: inline-block; max-width: 100%;
+    }
+    .dlv-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+    .dlv-note { color: var(--text-muted); font-size: 12.5px; margin: 16px 0 0; line-height: 1.55; }
+    .dlv-note a { color: var(--accent); }
+
+    /* Trust card */
+    .trust { background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; }
+    .trust h2 { margin-top: 0; }
+    .trust ul.facts { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    .trust ul.facts li {
+      padding: 12px 14px; background: var(--bg-elev-2);
+      border: 1px solid var(--border); border-left: 3px solid var(--accent);
+      border-radius: 8px; color: var(--text); font-size: 14px; line-height: 1.55;
+    }
+    .trust ul.facts li strong { color: var(--text); }
+    .trust .ts-foot { color: var(--text-muted); font-size: 13px; margin-top: 18px; line-height: 1.6; }
+
+    .why-os { background: var(--bg-elev); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; }
+    .why-os h3 { margin: 0 0 10px; font-size: 17px; }
+    .why-os p { margin: 0 0 12px; color: var(--text-muted); font-size: 14px; line-height: 1.65; }
+    .why-os ul { margin: 8px 0 0; padding-left: 18px; color: var(--text); line-height: 1.8; font-size: 14px; }
 
     .limit { display: grid; gap: 10px; padding: 0; margin: 0; }
     .limit li { background: var(--bg-elev); border: 1px solid var(--border);
@@ -177,16 +231,16 @@
         <a href="#why">Why</a>
         <a href="#features">Features</a>
         <a href="#how">How it works</a>
-        <a href="#built-for">Built for</a>
-        <a href="#privacy">Privacy</a>
         <a href="#download">Download</a>
+        <a href="#trust">Trust</a>
+        <a href="#privacy">Privacy</a>
       </div>
     </div>
   </nav>
 
   <header class="hero">
     <div class="container">
-      <div class="badge">AI Speaking Companion · Private test build v0.1</div>
+      <div class="badge">AI Speaking Companion · Private test build v0.2</div>
       <h1>Stay camera-facing during interviews, demos, and presentations.</h1>
       <p class="sub">
         PitchPrompter AI combines a desktop teleprompter, AI script coaching, and
@@ -339,23 +393,99 @@
     <div class="container">
       <h2>Download</h2>
       <p class="lead">Private Windows test build. Recommended for trusted testers only.</p>
-      <div class="download">
-        <div>
-          <h3>PitchPrompter AI v0.1 — Private Test Build</h3>
-          <p>Windows x64 portable. Unzip and run. No installer required.</p>
-          <div class="dl-meta">
-            <span>Windows 10 / 11 · x64</span>
-            <span>~3 MB ZIP</span>
-            <span>Unsigned — SmartScreen warning expected</span>
+
+      <div class="dlv">
+        <div class="dlv-head">
+          <div>
+            <h3>PitchPrompter AI — Private Test Build</h3>
+            <p class="sub">Released 2026-06-21 · Hosted on GitHub Releases</p>
           </div>
+          <span class="dlv-status" title="Application is not yet code-signed">⚠ Unsigned build</span>
         </div>
-        <a class="btn primary" href="https://github.com/amit1858/pitchprompter-ai/releases/download/v0.1-private-test/PitchPrompter-AI-v0.1-private-test-windows-x64.zip" download>
-          Download ZIP
-        </a>
+
+        <dl class="dlv-grid">
+          <div><dt>Version</dt><dd>v0.2 Private Test Build</dd></div>
+          <div><dt>Platform</dt><dd>Windows 10 / 11 · x64</dd></div>
+          <div><dt>Package</dt><dd>Portable ZIP (no installer)</dd></div>
+          <div><dt>File size</dt><dd>2.86 MB</dd></div>
+          <div><dt>Status</dt><dd>Unsigned</dd></div>
+          <div><dt>Release date</dt><dd>2026-06-21</dd></div>
+          <div style="grid-column: 1 / -1;">
+            <dt>SHA-256</dt>
+            <dd><code>ae80eb5c56813c8e880a5d89e669d733463db8b5d0a69b6ea972d606fe21ed45</code></dd>
+          </div>
+        </dl>
+
+        <div class="dlv-ctas">
+          <a class="btn primary"
+             href="https://github.com/amit1858/pitchprompter-ai/releases/tag/v0.2-private-test">
+            Download Build
+          </a>
+          <a class="btn"
+             href="https://github.com/amit1858/pitchprompter-ai"
+             target="_blank" rel="noopener noreferrer">
+            View Source Code
+          </a>
+        </div>
+
+        <p class="dlv-note">
+          The download link opens the official
+          <a href="https://github.com/amit1858/pitchprompter-ai/releases/tag/v0.2-private-test"
+             target="_blank" rel="noopener noreferrer">GitHub Release page</a>
+          where you can see the release notes, the full file list, and download the ZIP
+          directly from GitHub's CDN. Verify the SHA-256 above after download using
+          <code>Get-FileHash</code> in PowerShell.
+        </p>
       </div>
-      <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px;">
-        SHA-256: <code>0ee423819c73f43331680dc132f6c2bd736904019f7dca2883bfb8ef4998f36b</code>
-      </p>
+    </div>
+  </section>
+
+  <section id="trust">
+    <div class="container">
+      <div class="trust">
+        <h2>Private Test Build Information</h2>
+        <p class="lead" style="margin-bottom: 4px;">
+          A short, honest summary of what this build is and how it handles your data.
+          Please read this before installing.
+        </p>
+        <ul class="facts">
+          <li>This is a <strong>private beta release</strong> shared with a small group of trusted testers.</li>
+          <li>The application is currently <strong>unsigned</strong>. Windows SmartScreen may show a warning the first time you run it.</li>
+          <li>The warning exists because the application has not yet been code-signed by a commercial certificate authority. This is common for early-stage software and independent developer builds.</li>
+          <li>The full <strong>source code is publicly available on GitHub</strong>, and you can review it before downloading.</li>
+          <li>The application includes <strong>no telemetry</strong>. It does not phone home, count installs, or send usage data.</li>
+          <li>No account creation is required. There is no sign-up, no login, and no email collected.</li>
+          <li>Your <strong>scripts remain on your device</strong> in the application's local storage.</li>
+          <li>Your <strong>AI API key remains on your device</strong> and is sent only to the AI provider you choose, only when you explicitly trigger a rewrite action.</li>
+          <li><strong>Code signing is planned</strong> if the product progresses beyond private testing. This will remove the SmartScreen warning over time.</li>
+        </ul>
+        <p class="ts-foot">
+          For the complete data-handling model, including the exact storage keys
+          used and the network calls the application makes, see
+          <a href="https://github.com/amit1858/pitchprompter-ai/blob/main/SECURITY.md"
+             target="_blank" rel="noopener noreferrer">SECURITY.md</a> in the repository.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="open-source">
+    <div class="container">
+      <div class="why-os">
+        <h3>Why is the source code public?</h3>
+        <p>
+          PitchPrompter AI ships unsigned and asks for microphone access and
+          (optionally) an AI API key. Making the source public is the simplest
+          way to let testers confirm that the application behaves the way we
+          describe.
+        </p>
+        <ul>
+          <li><strong>Transparency.</strong> The exact code that builds the EXE you download is on GitHub at the tagged release.</li>
+          <li><strong>Privacy verification.</strong> You can grep for <code>fetch(</code> and confirm there is only one outbound network path (the AI rewrite call you explicitly trigger).</li>
+          <li><strong>Independent review.</strong> Security-minded testers can audit the storage, microphone, and AI code paths before they trust the build.</li>
+          <li><strong>Trust building.</strong> Unsigned builds from unknown publishers are reasonable to be cautious about. Open source closes the gap until code signing is in place.</li>
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -364,11 +494,10 @@
       <h2>Known limitations</h2>
       <p class="lead">Calling these out up front so you know what to expect.</p>
       <ul class="limit">
-        <li><strong>Windows only.</strong> macOS and Linux builds are not produced for v0.1.</li>
+        <li><strong>Windows only.</strong> macOS and Linux builds are not produced for v0.2.</li>
         <li><strong>Unsigned binary.</strong> Windows SmartScreen will warn on first launch. Click "More info → Run anyway".</li>
         <li><strong>Capture exclusion is experimental.</strong> Honored by Teams / Zoom / Meet / modern OBS. Not honored by legacy GDI capture or hardware capture cards. Not a security guarantee.</li>
         <li><strong>Full-desktop sharing may still reveal the teleprompter.</strong> Always prefer sharing a specific application window.</li>
-        <li><strong>Voice Follow is not yet in Camera Lock window.</strong> Main teleprompter only for v0.1. Planned for v0.2.</li>
         <li><strong>Web Speech API accuracy varies</strong> by accent, mic quality, and ambient noise. A local Whisper provider is on the roadmap.</li>
         <li><strong>No auto-update.</strong> We'll send you the next build directly.</li>
       </ul>
@@ -405,7 +534,7 @@
         </div>
         <p class="vnote">
           Roadmap items are direction, not commitments. Today's product is the
-          v0.1 build above. We will not ship something we cannot stand behind.
+          v0.2 build above. We will not ship something we cannot stand behind.
         </p>
       </div>
     </div>
