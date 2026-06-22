@@ -80,18 +80,46 @@ export class BrowserSpeechProvider implements SpeechProvider {
     onResult: SpeechResultHandler;
     onError?: SpeechErrorHandler;
     onEnd?: () => void;
+    onStage?: (name: string, payload?: unknown) => void;
   }): Promise<void> {
+    const stage = opts.onStage ?? (() => {});
     const Ctor = getCtor();
     if (!Ctor) {
+      stage("speech_recognition_unsupported");
       opts.onError?.({ code: "unsupported", message: "Web Speech API is not available in this runtime." });
       return;
     }
+    // Phase 2: explicit mediaDevices availability check before getUserMedia,
+    // so the failure mode "navigator.mediaDevices is undefined" surfaces
+    // distinctly from "permission denied".
+    if (typeof navigator === "undefined" || !navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
+      stage("media_devices_unavailable");
+      opts.onError?.({
+        code: "media_unavailable",
+        message: "Microphone access is not available in this desktop window. Voice Follow cannot start. Manual scrolling still works.",
+      });
+      return;
+    }
     // Request mic permission explicitly first for clearer UX.
+    stage("get_user_media_called");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((t) => t.stop());
+      stage("get_user_media_success");
     } catch (e: any) {
-      opts.onError?.({ code: "permission", message: e?.message ?? "Microphone permission denied." });
+      const name: string = e?.name ?? "Error";
+      const msg: string = e?.message ?? "Microphone permission denied.";
+      stage("get_user_media_error", { name, message: msg });
+      // Distinguish permission denial from "media stack absent" so the UI can
+      // show the right message. NotAllowedError = user (or runtime) denied;
+      // NotFoundError / OverconstrainedError = no device or constraints bad;
+      // SecurityError = insecure context / blocked by policy;
+      // TypeError = mediaDevices itself bad.
+      let code = "permission";
+      if (name === "NotAllowedError" || name === "SecurityError") code = "permission";
+      else if (name === "NotFoundError" || name === "OverconstrainedError") code = "no_device";
+      else if (name === "TypeError") code = "media_unavailable";
+      opts.onError?.({ code, message: msg });
       return;
     }
 
@@ -114,8 +142,6 @@ export class BrowserSpeechProvider implements SpeechProvider {
         const delta = extractDelta(prev, full);
         if (delta === null) {
           this.suppressed++;
-          // Still update the seen-cache so a subsequent finalize with the
-          // same text doesn't accidentally re-emit via the fallback path.
           this.seen.set(i, full);
           if (isFinal) this.seen.delete(i);
           continue;
@@ -132,18 +158,22 @@ export class BrowserSpeechProvider implements SpeechProvider {
       }
     };
     rec.onerror = (ev: any) => {
+      stage("speech_recognition_error", { error: ev?.error });
       opts.onError?.({ code: ev?.error ?? "unknown", message: ev?.message ?? String(ev?.error ?? "speech error") });
     };
     rec.onend = () => {
-      // Clear segment cache so a fresh recognition session starts cleanly.
+      stage("speech_recognition_end");
       this.seen.clear();
       opts.onEnd?.();
     };
 
     this.rec = rec;
+    stage("speech_recognition_start_called");
     try {
       rec.start();
+      stage("speech_recognition_start_success");
     } catch (e: any) {
+      stage("speech_recognition_start_error", { message: e?.message });
       opts.onError?.({ code: "start_failed", message: e?.message ?? "Could not start recognition." });
     }
   }

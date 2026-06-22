@@ -18,6 +18,8 @@ tauri = { version = "1.6", features = ["http-request", "shell-open", "window-cre
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.52", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+webview2-com = "0.19"
+windows = { version = "0.39", features = ["Win32_Foundation", "Win32_System_Com"] }
 
 [features]
 default = ["custom-protocol"]

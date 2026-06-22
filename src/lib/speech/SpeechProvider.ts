@@ -13,6 +13,8 @@ export interface SpeechRecognitionResult {
 
 export type SpeechResultHandler = (r: SpeechRecognitionResult) => void;
 export type SpeechErrorHandler = (e: { code: string; message: string }) => void;
+/** Optional structured stage trace for startup debugging. Never logs audio. */
+export type SpeechStageHandler = (name: string, payload?: unknown) => void;
 
 export interface SpeechProvider {
   readonly id: string;
@@ -23,6 +25,7 @@ export interface SpeechProvider {
     onResult: SpeechResultHandler;
     onError?: SpeechErrorHandler;
     onEnd?: () => void;
+    onStage?: SpeechStageHandler;
   }): Promise<void>;
   stop(): void;
 }

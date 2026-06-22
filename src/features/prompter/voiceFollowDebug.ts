@@ -37,6 +37,8 @@ export interface VoiceFollowDebugSnapshot {
   // State
   status: string;                  // current VoiceFollowStatus
   statusTransitions: string[];     // last 8 transitions, e.g. "listening->following"
+  // Log buffer for stage tracing (Phase 1: provider startup tracing).
+  events: Array<{ at: number; name: string; payload?: unknown }>;
 }
 
 const EMPTY: VoiceFollowDebugSnapshot = {
@@ -64,6 +66,7 @@ const EMPTY: VoiceFollowDebugSnapshot = {
   alignMatchCount: 0,
   status: "idle",
   statusTransitions: [],
+  events: [],
 };
 
 let snapshot: VoiceFollowDebugSnapshot = EMPTY;
@@ -84,8 +87,18 @@ function update(patch: Partial<VoiceFollowDebugSnapshot>) {
 
 export const voiceFollowDebug = {
   reset() {
-    snapshot = EMPTY;
+    snapshot = { ...EMPTY, events: [] };
     emit();
+  },
+  /**
+   * Phase 1 stage trace. Append a named event to the ring buffer so
+   * testers can see, in order, exactly how far the startup path got
+   * (toggle → enable → provider.start → getUserMedia → SR.start).
+   * Payloads are kept tiny — never log audio or transcript contents.
+   */
+  event(name: string, payload?: unknown) {
+    const next = [...snapshot.events, { at: performance.now(), name, payload }].slice(-20);
+    update({ events: next });
   },
   speech(input: {
     rawTranscript: string;

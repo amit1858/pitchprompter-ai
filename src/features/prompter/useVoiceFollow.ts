@@ -18,6 +18,14 @@ export type VoiceFollowStatus =
 export const VOICE_FOLLOW_UNAVAILABLE_MESSAGE =
   "Voice Follow is not available in this desktop runtime. Manual scrolling still works. Local Whisper support is planned.";
 
+/** Phase 4 fallback copy: shown when navigator.mediaDevices is unreachable. */
+export const VOICE_FOLLOW_MEDIA_UNAVAILABLE_MESSAGE =
+  "Microphone access is not available in this desktop window. Voice Follow cannot start. Manual scrolling still works.";
+
+/** Phase 4 fallback copy: shown when the OS / runtime denies permission. */
+export const VOICE_FOLLOW_PERMISSION_DENIED_MESSAGE =
+  "Microphone permission was denied. Enable microphone access for PitchPrompter AI in Windows settings and try again.";
+
 export interface UseVoiceFollowOpts {
   enabled: boolean;
   scriptBody: string | null;
@@ -121,6 +129,7 @@ export function useVoiceFollow({
   }, [scriptBody]);
 
   useEffect(() => {
+    voiceFollowDebug.event("voice_enabled_state_changed", { enabled, hasScript: !!scriptBody });
     if (!enabled || !scriptBody) {
       providerRef.current?.stop();
       providerRef.current = null;
@@ -133,6 +142,7 @@ export function useVoiceFollow({
     if (!supported) {
       setStatus("error");
       voiceFollowDebug.status("error");
+      voiceFollowDebug.event("speech_recognition_unsupported");
       onUnavailable?.("Web Speech API is not available in this runtime.");
       onForceDisable?.();
       return;
@@ -143,6 +153,7 @@ export function useVoiceFollow({
     setStatus("listening");
     voiceFollowDebug.reset();
     voiceFollowDebug.status("listening");
+    voiceFollowDebug.event("voice_enabled_state_changed", { enabled: true, hasScript: true });
     spokenRef.current = [];
     cursorRef.current = 0;
     setCursor(0);
@@ -243,10 +254,21 @@ export function useVoiceFollow({
       },
       onError: (e: { code: string; message: string }) => {
         if (cancelled) return;
-        if (e.code === "not-allowed" || e.code === "service-not-allowed" || e.code === "permission") {
+        voiceFollowDebug.event("speech_provider_error", { code: e.code });
+        if (e.code === "media_unavailable") {
           setStatus("error");
           voiceFollowDebug.status("error");
-          onUnavailable?.("Microphone permission denied for Voice Follow.");
+          onUnavailable?.(VOICE_FOLLOW_MEDIA_UNAVAILABLE_MESSAGE);
+          onForceDisable?.();
+        } else if (e.code === "not-allowed" || e.code === "service-not-allowed" || e.code === "permission") {
+          setStatus("error");
+          voiceFollowDebug.status("error");
+          onUnavailable?.(VOICE_FOLLOW_PERMISSION_DENIED_MESSAGE);
+          onForceDisable?.();
+        } else if (e.code === "no_device") {
+          setStatus("error");
+          voiceFollowDebug.status("error");
+          onUnavailable?.("No microphone was found. Connect a microphone and try again.");
           onForceDisable?.();
         } else if (e.code === "unsupported") {
           setStatus("error");
@@ -261,16 +283,20 @@ export function useVoiceFollow({
         // Browser STT auto-stops on long silence. Restart while still opted-in.
         if (providerRef.current === provider) {
           provider.start(handlers).catch(() => {
-            // Silent fallback; next user toggle will retry cleanly.
             setStatus("error");
             voiceFollowDebug.status("error");
           });
         }
       },
+      onStage: (name: string, payload?: unknown) => {
+        voiceFollowDebug.event(name, payload);
+      },
     };
 
-    provider.start(handlers).catch(() => {
+    voiceFollowDebug.event("provider_start_called");
+    provider.start(handlers).catch((err: any) => {
       if (cancelled) return;
+      voiceFollowDebug.event("provider_start_threw", { message: err?.message });
       setStatus("error");
       voiceFollowDebug.status("error");
       onForceDisable?.();

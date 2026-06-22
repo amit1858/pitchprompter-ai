@@ -5,7 +5,7 @@ import { toast } from "@/components/Toast";
 import { launchCameraLock, Placement } from "./launchCameraLock";
 import { useVoiceFollow } from "./useVoiceFollow";
 import { VoiceFollowDebugPanel } from "./VoiceFollowDebugPanel";
-import { isVoiceFollowDebugEnabled } from "./voiceFollowDebug";
+import { isVoiceFollowDebugEnabled, voiceFollowDebug } from "./voiceFollowDebug";
 
 interface Props {
   initialScriptId: string | null;
@@ -325,7 +325,7 @@ export function TeleprompterPage({ initialScriptId }: Props) {
             </button>
             <button
               className={`ghost ${voiceFollow ? "active" : ""}`}
-              onClick={() => setVoiceFollow((v) => !v)}
+              onClick={() => setVoiceFollow((v) => { voiceFollowDebug.event("voice_toggle_clicked", { surface: "teleprompter", next: !v }); return !v; })}
               disabled={!script}
               title="Voice Follow: teleprompter advances as you speak. Audio stays on your device."
             >

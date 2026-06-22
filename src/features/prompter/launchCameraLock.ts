@@ -70,8 +70,18 @@ export async function launchCameraLock(opts: LaunchOpts): Promise<string> {
   });
 
   return await new Promise<string>((resolve, reject) => {
-    const offCreated = win.once("tauri://created", () => {
+    const offCreated = win.once("tauri://created", async () => {
       offCreated.then((u) => u());
+      // Install the WebView2 microphone permission handler so getUserMedia
+      // does not get silently denied by the default deny-all behavior.
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        await invoke("grant_microphone_for_window", { label });
+      } catch (e) {
+        // Non-fatal — the JS layer will still call getUserMedia and surface
+        // the resulting error through the existing fallback paths.
+        console.warn("[camera-lock] grant_microphone_for_window failed", e);
+      }
       resolve(label);
     });
     win.once("tauri://error", (e) => {

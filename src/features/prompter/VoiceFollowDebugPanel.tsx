@@ -57,6 +57,28 @@ export function VoiceFollowDebugPanel() {
         {sinceAlign !== null && <Row k="ageMs" v={`${sinceAlign}`} />}
       </Section>
 
+      <Section title="Stage trace">
+        {d.events.length === 0 ? (
+          <div style={{ color: "#9fb3d8" }}>(no startup events yet — click Voice Follow)</div>
+        ) : (
+          <div style={{ display: "grid", gap: 2 }}>
+            {d.events.map((e, i) => (
+              <div key={i} style={{ display: "flex", gap: 8 }}>
+                <span style={{ color: "#7a8aa3", minWidth: 48, textAlign: "right" }}>
+                  +{Math.round(e.at - (d.events[0]?.at ?? e.at))}ms
+                </span>
+                <span style={{ color: stageColor(e.name), flex: 1 }}>
+                  {e.name}
+                  {e.payload !== undefined && (
+                    <span style={{ color: "#9fb3d8" }}>  {JSON.stringify(e.payload)}</span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
       <Section title="Transitions">
         <div style={{ color: "#9fb3d8" }}>
           {d.statusTransitions.length === 0
@@ -101,4 +123,11 @@ function statusColor(s: string): string {
     case "error": return "#ff7a7a";
     default: return "#9fb3d8";
   }
+}
+
+function stageColor(name: string): string {
+  if (name.endsWith("_error") || name.includes("denied") || name.includes("unsupported")) return "#ff7a7a";
+  if (name.endsWith("_success")) return "#7CFFA8";
+  if (name.endsWith("_called") || name.includes("changed") || name.includes("clicked")) return "#8fb3ff";
+  return "#e6f0ff";
 }

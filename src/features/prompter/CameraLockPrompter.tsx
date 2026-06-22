@@ -4,7 +4,7 @@ import type { Script } from "@/types";
 import { applyCaptureExclusion, type CaptureExclusionStatus } from "@/lib/privacy/captureExclusion";
 import { useVoiceFollow } from "./useVoiceFollow";
 import { VoiceFollowDebugPanel } from "./VoiceFollowDebugPanel";
-import { isVoiceFollowDebugEnabled } from "./voiceFollowDebug";
+import { isVoiceFollowDebugEnabled, voiceFollowDebug } from "./voiceFollowDebug";
 
 // Camera Lock Mode: a borderless, always-on-top reading surface designed to sit
 // directly next to a laptop webcam. No app navigation, no recursion.
@@ -158,7 +158,10 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
         setPrefs((p) => ({ ...p, fontSize: Math.max(14, p.fontSize - 2) }));
       } else if (e.key === "v" || e.key === "V") {
         if (!script) return;
-        setVoiceFollow((v) => !v);
+        setVoiceFollow((v) => {
+          voiceFollowDebug.event("voice_toggle_clicked", { surface: "camera-lock", next: !v, via: "key:V" });
+          return !v;
+        });
         setRunning(false);
         setVoiceNotice(null);
       }
@@ -277,6 +280,7 @@ export function CameraLockPrompter({ scriptId }: { scriptId: string | null }) {
             setVoiceNotice(null);
             setVoiceFollow((v) => {
               const next = !v;
+              voiceFollowDebug.event("voice_toggle_clicked", { surface: "camera-lock", next });
               if (next) setRunning(false);
               return next;
             });
